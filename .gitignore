@@ -1,0 +1,7 @@
+infra/.terraform
+infra/environments/dev.tfvars
+infra/environments/prod.tfvars
+infra/*.tfstate
+infra/terraform.tfstate.d
+infra/.terraform.lock.hcl
+app/__pycache__

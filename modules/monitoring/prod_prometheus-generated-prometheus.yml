@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "prod_alertmanager:9093"
+
+rule_files:
+  - "/etc/prometheus/alert-rules.yml"
+
+scrape_configs:
+  - job_name: "web_app"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+        - "prod_web-0:5000"
+        - "prod_web-1:5000"
+        - "prod_web-2:5000"
+
+  - job_name: "cadvisor"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+        - "prod_cadvisor:8080"

@@ -1,0 +1,3 @@
+flask==3.0.*
+mysql-connector-python
+prometheus-flask-exporter==0.23.2

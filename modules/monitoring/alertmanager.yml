@@ -1,0 +1,16 @@
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'v.ogazon@gmail.com'
+  smtp_auth_username: 'v.ogazon@gmail.com'
+  smtp_auth_password: 'vjum gjun gnxv zcpi'
+  smtp_require_tls: true
+
+route:
+  receiver: mail
+
+receivers:
+  - name: mail
+    email_configs:
+      - to: 'vicente.ogazon1@estudiant.uib.cat'
+        send_resolved: true
