@@ -192,10 +192,12 @@ variable "alerting_enabled" {
 
 variable "alertmanager_image" {
   type = string
+  default = null
 }
 
 variable "alertmanager_container_name" {
   type = string
+  default = null
 }
 
 variable "alertmanager_internal_port" {
@@ -205,6 +207,7 @@ variable "alertmanager_internal_port" {
 
 variable "alertmanager_external_port" {
   type = number
+  default = null
 }
 
 # MinIO
@@ -241,4 +244,9 @@ variable "minio_console_internal_port" {
 
 variable "minio_console_external_port" {
   type = number
+}
+
+variable "minio_background_image_path" {
+  type        = string
+  description = "Ruta en el host a la imagen fondo.png que se subirá al bucket del entorno"
 }
