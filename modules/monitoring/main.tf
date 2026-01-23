@@ -25,6 +25,18 @@ locals {
     loki_host = var.loki_container_name
     loki_port = var.loki_internal_port
   })
+
+  grafana_datasources = templatefile("${path.module}/grafana-datasources.yml.tpl", {
+    prometheus_host = var.prometheus_container_name
+    prometheus_port = var.prometheus_internal_port
+  })
+
+  grafana_dashboards_provider = templatefile("${path.module}/grafana-dashboards.yml.tpl", {})
+
+  grafana_dashboard = templatefile("${path.module}/grafana-dashboard.json.tpl", {
+    title = "Stack - ${var.grafana_container_name}"
+  })
+
 }
 
 
@@ -38,6 +50,22 @@ resource "local_file" "promtail_config" {
   content  = local.promtail_config
   filename = abspath("${path.module}/${var.promtail_container_name}-generated-promtail.yml")
 }
+
+resource "local_file" "grafana_datasources" {
+  content  = local.grafana_datasources
+  filename = abspath("${path.module}/${var.grafana_container_name}-datasources.yml")
+}
+
+resource "local_file" "grafana_dashboards_provider" {
+  content  = local.grafana_dashboards_provider
+  filename = abspath("${path.module}/${var.grafana_container_name}-dashboards.yml")
+}
+
+resource "local_file" "grafana_dashboard" {
+  content  = local.grafana_dashboard
+  filename = abspath("${path.module}/${var.grafana_container_name}-dashboard.json")
+}
+
 
 # Volúmenes para datos
 resource "docker_volume" "prometheus_data" {
@@ -101,6 +129,24 @@ resource "docker_container" "grafana" {
   volumes {
     volume_name    = docker_volume.grafana_data.name
     container_path = "/var/lib/grafana"
+  }
+
+    volumes {
+    host_path      = abspath(local_file.grafana_datasources.filename)
+    container_path = "/etc/grafana/provisioning/datasources/datasources.yml"
+    read_only      = true
+  }
+
+  volumes {
+    host_path      = abspath(local_file.grafana_dashboards_provider.filename)
+    container_path = "/etc/grafana/provisioning/dashboards/dashboards.yml"
+    read_only      = true
+  }
+
+  volumes {
+    host_path      = abspath(local_file.grafana_dashboard.filename)
+    container_path = "/etc/grafana/provisioning/dashboards/stack.json"
+    read_only      = true
   }
 
   env = [
