@@ -147,6 +147,10 @@ def delete_users():
 
     return redirect("/")
 
+@bp.route("/instance", methods=["GET"])
+def instance():
+    return jsonify({"instance": get_container_name()})
+
 
 @bp.route("/status", methods=["GET"])
 def status_page():

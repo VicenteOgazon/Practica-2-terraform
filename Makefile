@@ -104,6 +104,13 @@ clean-prod:
 	cd $(TERRAFORM_DIR) && sudo terraform destroy -var-file=$(TFVARS_PROD) -auto-approve
 	sudo docker system prune -f
 
+
+# =========================
+# test e2e
+# =========================
+test-e2e:
+	python3 test/test_e2e.py $(env)
+
 # =========================
 # Help
 # =========================

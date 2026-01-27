@@ -16,14 +16,17 @@ resource "docker_image" "lb" {
   name = var.image
 }
 
-#Generar una variable local a partir de la plantilla con las contenedores web disponibles
 locals {
+  backends_text = join("\n", [for b in var.backends : "${b}:${var.backend_port}"])
+
   nginx_conf = templatefile("${path.module}/nginx.conf.tpl", {
-    listen_port  = 80
-    backends     = var.backends
-    backend_port = var.backend_port
+    listen_port   = 80
+    backends      = var.backends
+    backend_port  = var.backend_port
+    backends_text = local.backends_text
   })
 }
+
 
 #Empleamos el resource local para crear en mi máquina un fichero con nginx_conf
 resource "local_file" "nginx_conf" {

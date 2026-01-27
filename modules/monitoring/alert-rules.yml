@@ -1,33 +1,33 @@
 groups:
   - name: web.rules
     rules:
-      - alert: WebInstanceDownProd
-        expr: up{job="web_app", instance=~"prod_web-.*"} == 0
-        for: 5s
+      - alert: WebReplicasBelowDesiredProd
+        expr: sum(up{job="web_app", instance=~"prod_web-.*:5000"}) < 3
+        for: 10s
         labels:
-          severity: warning
+          severity: critical
         annotations:
-          summary: "Instancia web de PRODUCCIÓN caída ({{ $labels.instance }})"
-          description: "La instancia {{ $labels.instance }} lleva caída más de 5 segundos."
+          summary: "Réplica web insuficiente en PRODUCCIÓN"
+          description: "Hay menos de 3 instancias web UP en producción."
 
   - name: db.rules
     rules:
       - alert: DBContainerDownProd
-        expr: time() - container_last_seen{job="cadvisor", id="/system.slice/docker-c06072283e06e45ae923c60b79e3b71c21c2cbf0a5e2030ce2bdb42a74d4c720.scope"} > 30
+        expr: time() - container_last_seen{job="cadvisor", name=~"/?prod_db"} > 30
         for: 0s
         labels:
           severity: critical
         annotations:
-          summary: "Contenedor de base de datos de PRODUCCIÓN caído"
-          description: "No se han recibido métricas del contenedor DB de producción en los últimos 5s."
+          summary: "Contenedor DB de PRODUCCIÓN caído"
+          description: "No se han recibido métricas del contenedor prod_db en los últimos 30s."
 
   - name: lb.rules
     rules:
       - alert: LBContainerDownProd
-        expr: time() - container_last_seen{job="cadvisor", id="/system.slice/docker-369d0906a41fdd7ca15bac07c6932b0a933a9c759c6ac2ed4ef74051cc54f4d5.scope"} > 30
+        expr: time() - container_last_seen{job="cadvisor", name=~"/?prod_lb"} > 30
         for: 0s
         labels:
           severity: critical
         annotations:
-          summary: "Contenedor de load balancer de PRODUCCIÓN caído"
-          description: "No se han recibido métricas del contenedor LB de producción en los últimos 5s."
+          summary: "Contenedor LB de PRODUCCIÓN caído"
+          description: "No se han recibido métricas del contenedor prod_lb en los últimos 30s."
