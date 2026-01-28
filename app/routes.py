@@ -54,20 +54,32 @@ def index():
 @bp.route("/usuarios/json", methods=["GET"])
 def listar_usuarios_json():
     cache_key = "usuarios_todos"
-    usuarios = None
 
-    # Intentar obtener desde caché
+    # Por defecto: asumimos que no hay caché (dev) o que falló
+    cache_status = "BYPASS"
+
+    # Intentar leer de caché
+    usuarios = None
     try:
         usuarios = get_cache(cache_key)
+        # Si get_cache existe y no lanza error, entonces la caché está "habilitada"
+        cache_status = "MISS"
     except Exception as e:
+        # En dev esto saltará (Redis no disponible)
         print(f"Error accediendo a Redis: {e}")
 
+    # Si venía de Redis
     if usuarios:
-        return jsonify({"usuarios": usuarios})
+        resp = jsonify({"usuarios": usuarios})
+        resp.headers["X-Cache"] = "HIT"
+        return resp
 
+    # Leer de MySQL
     conn = get_connection()
     if conn is None:
-        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+        resp = jsonify({"error": "No se pudo conectar con la base de datos"})
+        resp.headers["X-Cache"] = cache_status
+        return resp, 500
 
     try:
         cursor = conn.cursor(dictionary=True)
@@ -77,15 +89,19 @@ def listar_usuarios_json():
         conn.close()
     except Exception as e:
         print(f"Error al ejecutar consulta MySQL: {e}")
-        return jsonify({"error": "Error al consultar la base de datos"}), 500
+        resp = jsonify({"error": "Error al consultar la base de datos"})
+        resp.headers["X-Cache"] = cache_status
+        return resp, 500
 
-    # Intentar guardar en caché
+    # Guardar en caché
     try:
         set_cache(cache_key, usuarios)
     except Exception as e:
         print(f"No se pudo guardar en Redis: {e}")
-
-    return jsonify({"usuarios": usuarios})
+        
+    resp = jsonify({"usuarios": usuarios})
+    resp.headers["X-Cache"] = cache_status
+    return resp
 
 
 @bp.route("/set", methods=["POST"])

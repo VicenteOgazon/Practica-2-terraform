@@ -25,3 +25,13 @@ output "lb_url" {
 output "web_replicas" {
   value = var.web_replicas
 }
+
+output "minio_api_port" {
+  description = "Puerto externo del API de MinIO"
+  value       = var.minio_api_external_port
+}
+
+output "minio_bucket" {
+  description = "Bucket de estáticos del entorno"
+  value       = var.environment == "production" ? "static-prod" : "static-dev"
+}
