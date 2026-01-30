@@ -46,7 +46,7 @@ def http_get(url, with_headers=False):
 def main():
 
     if len(sys.argv) < 2 or sys.argv[1] not in ("dev", "prod"):
-        print("Uso: python3 test/test_e2e.py env=dev|prod")
+        print("Uso: make test_e2e.py env=dev|prod")
         sys.exit(1)
 
     workspace = sys.argv[1]
@@ -221,13 +221,13 @@ def main():
         sys.exit(1)
 
     if workspace == "prod":
-        if xcache2 != "HIT":
-            print("ERROR: en prod se esperaba X-Cache=HIT en la segunda petición")
+        if xcache2 != "FROM_CACHE":
+            print("ERROR: en prod se esperaba X-Cache=FROM_CACHE en la segunda petición")
             sys.exit(1)
         print("OK: caché funcionando correctamente")
     else:
-        if xcache1 != "BYPASS":
-            print("AVISO: en dev se esperaba BYPASS, pero llegó:", xcache1)
+        if xcache1 != "NOT_FROM_CACHE":
+            print("AVISO: en dev se esperaba NOT_FROM_CACHE, pero llegó:", xcache1)
         else:
             print("OK: dev sin caché")
 
