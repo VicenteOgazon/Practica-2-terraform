@@ -140,3 +140,6 @@ help:
 	@echo "  make restart-prod                  - Recrea completamente el entorno prod"
 	@echo "  make clean-prod                    - Destruye prod y limpia recursos Docker"
 	@echo ""
+	@echo "  make test-e2e env=dev              - Ejecuta test end-to-end contra el entorno dev (requiere el entorno levantado)"
+	@echo "  make test-e2e env=prod             - Ejecuta test end-to-end contra el entorno prod (requiere el entorno levantado)"
+	@echo ""

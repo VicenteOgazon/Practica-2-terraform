@@ -17,7 +17,7 @@ Incluye:
 
 ---
 
-## Instalación y ejecución de los entornos
+## Instalación y despliegue de los entornos
 
 ### Requisitos
 
@@ -34,36 +34,32 @@ docker --version
 terraform version
 make --version
 ```
+
 Clonar el repositorio
 ```bash
-git clone https://github.com/VicenteOgazon/Practica-2-multicloud.git
-cd Practica-2-multicloud
+git clone https://github.com/VicenteOgazon/Practica-2-terraform.git
+cd Practica-2-terraform
 ```
 
-Construcción de las imágenes de la aplicación web
+### Carpetas necesarias
+Será necesario crear una carpeta environments que contenga los archivos **dev.tfvars** y **prod.tfvars** con todas las variables sensibles para cada entorno
+
+## Inicialización del entorno de desarrollo (dev)
 
 ### Imagen para entorno de desarrollo
 ```bash
 make build-dev
 ```
-### Imagen para entorno de producción
+### Inicialización y despliegue del entorno de desarrollo
 ```bash
-make build-prod
-```
-### Inicialización del entorno de desarrollo (dev)
-```bash
-cd dev
 make init-dev
-```
-### Despliegue
-```bash
 make plan-dev
 make apply-dev
 ```
 
 #### Acceso a los servicios
 
-Aplicación web a través del balanceador: 
+Aplicación web a través del balanceador (dev): 
 http://localhost:6060
 
 Panel de Prometheus (dev): 
@@ -75,21 +71,23 @@ http://localhost:3000
 Consola de MinIO (dev): 
 http://localhost:9001
 
-### Inicialización del entorno de producción (prod)
+## Inicialización del entorno de producción (prod)
+
+### Imagen para entorno de producción
 ```bash
-cd prod
-make init-prod
+make build-prod
 ```
 
-### Despliegue
+### Inicialización y despliegue del entorno de producción
 ```bash
+make init-prod
 make plan-prod
 make apply-prod
 ```
 
 ### Acceso a los servicios
 
-Aplicación web a través del balanceador: 
+Aplicación web a través del balanceador (prod): 
 http://localhost:6061
 
 Panel de Prometheus (prod): 
@@ -119,8 +117,6 @@ Características entorno de desarrollo (Terraform dev):
     - Prometheus dev scrapea métricas de las instancias web (`/metrics`) y de cAdvisor.
     - Grafana dev permite visualizar CPU y memoria por contenedor.
     - Loki + Promtail permiten consultar logs centralizados desde Grafana (Explore).
-    - Se despliega también un Alertmanager dev, usado como entorno de pruebas para las reglas de alerta.
-- Todos los recursos del entorno se gestionan con Terraform desde el directorio dev/ (`main.tf, variables.tf, dev.tfvars`).
 
 ### Entorno de desarrollo
 El entorno de producción está diseñado para ejecutar la aplicación en un entorno más robusto, con alta disponibilidad, caché y alertas configuradas.
@@ -138,7 +134,6 @@ Características entorno de producción (Terraform prod):
     - Grafana prod muestra dashboards de rendimiento (CPU, memoria, etc.).
     - Loki + Promtail centralizan los logs de los contenedores.
     - Alertmanager prod recibe las alertas de Prometheus y está configurado para enviar notificaciones por correo (por ejemplo, caída de una instancia web, de la base de datos o del balanceador).
-- Todos los recursos del entorno se gestionan con Terraform desde el directorio prod/ (main.tf, variables.tf, prod.tfvars).
 
 
 | Característica       | Desarrollo                                       | Producción                                          |
@@ -149,54 +144,182 @@ Características entorno de producción (Terraform prod):
 | Balanceador          | Nginx dev sin requisitos de alta disponibilidad  | Nginx prod con alta disponibilidad web              |
 | MinIO                | Bucket `static-dev` para estáticos de desarrollo | Bucket `static-prod` para estáticos de producción   |
 | Monitorización       | Prometheus + Grafana + cAdvisor + Loki/Promtail  | Igual que dev                                       |
-| Alertmanager         | Desplegado, uso principalmente de pruebas        | Desplegado, con envío de alertas por correo         |
+| Alertmanager         | No desplegado                                    | Desplegado, con envío de alertas por correo         |
 | Objetivo principal   | Desarrollo y pruebas de integración              | Despliegue con alta disponibilidad, caché y alertas |
+
+
+### Pruebas end-to-end (E2E)
+
+Se ha implementado un comando **make test-e2e** que ejecuta un test automático sobre el entorno indicado (dev o prod). El test asume que el entorno ya está levantado con Terraform.
+
+Durante su ejecución realiza:
+
+- Extrae la URL del balanceador desde los outputs de Terraform.
+
+- Obtiene el número de réplicas esperadas desde Terraform y valida cuántas réplicas están en el balanceador.
+
+- Comprueba que el tráfico se redirige entre distintas réplicas por el método Round-Robin.
+
+- Accede a MinIO y lista el contenido del bucket del entorno, static-dev o static-prod.
+
+- Hace una petición al enpoint /usuarios/json y verifica el funcionamiento de la caché mediante la cabecera X-Cache:
+
+    - En dev se espera NO_CACHE
+
+    - En prod se espera NOT_FROM_CACHE en la primera petición y FROM_CACHE en la segunda
+
+Uso del test
+```bash
+# Test contra dev
+make test-e2e ENV=dev
+
+# Test contra prod
+make test-e2e ENV=prod
+```
+
+### Coste mensual simulado en AWS
+
+Al ejecutar terraform apply, Terraform muestra en los outputs un resumen de coste mensual aproximado, simulando el despliegue en AWS EC2 On-Demand en la región eu-south-2.
+
+El cálculo se basa en:
+
+- 1 instancia t3.micro por réplica web.
+
+- 1 instancia t3.small para MySQL.
+
+- 1 instancia t3.micro para LB.
+
+- 1 instancia t3.micro para MinIO.
+
+- 1 instancia para monitorización (dev micro / prod small).
+
+- 1 instancia t3.micro para Redis (solo prod).
+
+Aproximación de 730 horas/mes.
+
+El output mostrado es cost_monthly_summary.
+
 
 ---
 ## Estructura del proyecto
 ```bash
 ├── app/
-│   ├── __init__.py                # create_app(), carga config por entorno, registra blueprints y métricas
-│   ├── __main__.py                # punto de entrada: python -m app
-│   ├── routes.py                  # rutas principales (/, /status, /health, /crash, etc.)
-│   ├── cache.py                   # lógica de acceso a Redis (solo prod)
-│   ├── config.py                  # clases Config, DevelopmentConfig, ProductionConfig
+│   ├── __init__.py                 # create_app(), carga config por entorno, registra blueprints y métricas
+│   ├── __main__.py                 # punto de entrada: python -m app
+│   ├── routes.py                   # rutas (/, /usuarios/json con X-Cache, /health, /instance, /crash, etc.)
+│   ├── cache.py                    # lógica Redis (solo prod, si USE_CACHE=True)
+│   ├── config.py                   # Config, DevelopmentConfig, ProductionConfig
 │   ├── templates/
-│   │   ├── index.html             # interfaz principal: gestión de usuarios + estado de servicios
-│   │   └── status.html            # página de estado
+│   │   ├── index.html              # UI principal
+│   │   └── status.html             # página de estado
 │   └── static/
-│       └── style.css              # estilos CSS
+│       └── style.css               # estilos CSS
 │
 ├── dockerfile/
-│   ├── dev_Dockerfile             # imagen Flask para dev
-│   ├── prod_Dockerfile            # imagen Flask para prod
-│   ├── dev_requirements.txt       # dependencias Python dev
-│   ├── prod_requirements.txt      # dependencias Python prod
+│   ├── dev_Dockerfile              # imagen Flask para dev
+│   ├── prod_Dockerfile             # imagen Flask para prod
+│   ├── dev_requirements.txt        # dependencias Python dev
+│   ├── prod_requirements.txt       # dependencias Python prod
 │   └── .dockerignore
 │
-├── dev/
-│   ├── main.tf                    # definición Terraform del entorno dev
-│   ├── variables.tf               # variables de dev
-│   └── dev.tfvars                 # valores concretos de dev
-│   
-│
-├── prod/
-│   ├── main.tf                    # definición Terraform del entorno prod
-│   ├── variables.tf               # variables de prod
-│   └── prod.tfvars                # valores concretos de prod
+├── infra/                          # Terraform unificado (workspaces dev/prod)
+│   ├── main.tf                     # root module: llama a módulos (web, db, lb, monitoring, storage, cache condicional, etc.)
+│   ├── variables.tf                # variables comunes para dev y prod
+│   ├── outputs.tf                  # outputs (lb_url, web_replicas, minio_bucket, minio_api_port, etc.)
+│   ├── cost.tf                     # cálculo de coste mensual simulado EC2 On-Demand eu-south-2 (output cost_monthly_summary)
+│   ├── minio_bootstrap.tf          # creación bucket + subida fondo.png (con mc / null_resource o provider minio, según tu versión final)
+│   └── environments/
+│       ├── dev.tfvars              # valores concretos dev (web_replicas=2, cache desactivada, puertos dev, bucket static-dev, etc.)
+│       └── prod.tfvars             # valores concretos prod (web_replicas=3, cache activada, puertos prod, bucket static-prod, etc.)
 │
 ├── modules/
-│   ├── web/                       # módulo de instancias web
-│   ├── db/                        # módulo MySQL
-│   ├── cache/                     # módulo Redis (prod)
-│   ├── lb/                        # módulo Nginx (balanceador)
-│   ├── network/                   # módulo de red Docker
-│   ├── monitoring/                # Prometheus, Grafana, cAdvisor, Loki, Promtail, Alertmanager
-│   └── storage/                   # MinIO
+│   ├── web/                        # módulo réplicas web Flask
+│   ├── db/                         # módulo MySQL + volumen + init.sql
+│   ├── cache/                      # módulo Redis (solo prod si enable_cache=true)
+│   ├── lb/                         # módulo Nginx LB + template nginx.conf.tpl
+│   ├── network/                    # módulo red Docker
+│   ├── monitoring/                 # Prometheus, Grafana, cAdvisor, Loki, Promtail, Alertmanager (condicional en dev/prod si aplica)
+│   └── storage/                    # MinIO
 │
-├── Makefile                       # comandos para build / despliegue / teardown de dev y prod
-└── README.md                      # guía de instalación, explicación y pruebas
+├── scripts/
+│   └── test_e2e.py                 # test end-to-end (LB/replicas/round-robin/MinIO/X-Cache)
+│
+├── Makefile                        # build imágenes + terraform init/plan/apply/destroy + make test-e2e ENV=dev|prod
+└── README.md                       # documentación del proyecto
 ```
+---
+
+## Diagrama
+flowchart TB
+  TF[Terraform\n(provider: kreuzwerker/docker)] --> DH[Docker Host]
+
+  DH --> DEVNET
+  DH --> PRODNET
+
+  subgraph DEVNET[Entorno DEV (red Docker: dev_network)]
+    DEVLB[Nginx LB\n:6060] --> DEVWEB0[Flask web\n(dev_web-0)]
+    DEVLB --> DEVWEB1[Flask web\n(dev_web-1)]
+
+    DEVWEB0 --> DEVDB[MySQL\n(dev_db)]
+    DEVWEB1 --> DEVDB
+
+    DEVWEB0 --> DEVMINIO[MinIO\n:9000 / :9001\n(bucket: static-dev)]
+    DEVWEB1 --> DEVMINIO
+
+    subgraph DEVMON[Monitoring DEV]
+      DEVCAD[cAdvisor\n:8080]
+      DEVPROM[Prometheus\n:9090]
+      DEVLOKI[Loki\n:3100]
+      DEVPROMTAIL[Promtail]
+      DEVGRAF[Grafana\n:3000]
+    end
+
+    DEVPROM --> DEVWEB0
+    DEVPROM --> DEVWEB1
+    DEVPROM --> DEVCAD
+
+    DEVPROMTAIL --> DEVLOKI
+    DEVGRAF --> DEVPROM
+    DEVGRAF --> DEVLOKI
+  end
+
+  subgraph PRODNET[Entorno PROD (red Docker: prod_network)]
+    PRODLB[Nginx LB\n:6061] --> PRODWEB0[Flask web\n(prod_web-0)]
+    PRODLB --> PRODWEB1[Flask web\n(prod_web-1)]
+    PRODLB --> PRODWEB2[Flask web\n(prod_web-2)]
+
+    PRODWEB0 --> PRODDB[MySQL\n(prod_db)]
+    PRODWEB1 --> PRODDB
+    PRODWEB2 --> PRODDB
+
+    PRODWEB0 --> PRODREDIS[Redis cache\n(redis_cache)]
+    PRODWEB1 --> PRODREDIS
+    PRODWEB2 --> PRODREDIS
+
+    PRODWEB0 --> PRODMINIO[MinIO\n:19000 / :19001\n(bucket: static-prod)]
+    PRODWEB1 --> PRODMINIO
+    PRODWEB2 --> PRODMINIO
+
+    subgraph PRODMON[Monitoring + Logs PROD]
+      PRODCAD[cAdvisor\n:8081]
+      PRODPROM[Prometheus\n:9091]
+      PRODLOKI[Loki\n:3101]
+      PRODPROMTAIL[Promtail]
+      PRODGRAF[Grafana\n:3001]
+      ALERT[Alertmanager\n:9094]
+    end
+
+    PRODPROM --> PRODWEB0
+    PRODPROM --> PRODWEB1
+    PRODPROM --> PRODWEB2
+    PRODPROM --> PRODCAD
+
+    PRODPROM --> ALERT
+
+    PRODPROMTAIL --> PRODLOKI
+    PRODGRAF --> PRODPROM
+    PRODGRAF --> PRODLOKI
+  end
 
 ---
 ## Pruebas realizadas
@@ -219,6 +342,8 @@ Todas las pruebas han sido satisfactorias.
 | 9  | En Prometheus dev, los targets `dev_web-*` y `dev_cadvisor:8080` aparecen en estado `UP`                 | OK  ✅    |
 | 10 | En Grafana dev, el dashboard de CPU y memoria muestra métricas de los contenedores (incluidos dev_web-*) | OK  ✅    |
 | 11 | Los logs de los contenedores dev se visualizan desde Grafana (Explore → Loki)                            | OK  ✅    |
+| 12 | Ejecución de make `test-e2e env=dev` (LB + réplicas + MinIO + cabecera X-Cache)                          | OK ✅     |
+
 
 **Conclusión:**
 El entorno de desarrollo funciona correctamente, con balanceo entre dos instancias web, acceso a la base de datos, métricas expuestas para Prometheus, dashboards en Grafana y logs centralizados consultables.
@@ -245,6 +370,8 @@ Se ha realizado un conjunto de pruebas para verificar el correcto funcionamiento
 | 14 | Grafana prod muestra métricas de CPU y memoria de todos los contenedores, diferenciando los `prod_web-*`                              | OK  ✅     |
 | 15 | Los logs de los contenedores prod se visualizan de forma centralizada en Grafana (Explore → Loki)                                     | OK  ✅     |
 | 16 | Alertmanager prod envía correos de alerta cuando se disparan las alertas definidas                                                    | OK  ✅     |
+| 17 | Ejecución de `make test-e2e env=prod` (LB + réplicas + MinIO + cabecera X-Cache)                                                      | OK  ✅     |
+
 
 **Conclusión:**
 El entorno de producción cumple los requisitos de:
@@ -278,4 +405,6 @@ Los comando se deben ejecutar desde la carpeta raíz del proyecto, se pueden con
   make down-prod                     - Destruye el entorno de producción"
   make restart-prod                  - Recrea completamente el entorno prod"
   make clean-prod                    - Destruye prod y limpia recursos Docker"
+  make test-e2e env=dev              - Ejecuta test end-to-end contra dev (LB, réplicas, MinIO, caché)
+  make test-e2e env=prod             - Ejecuta test end-to-end contra prod (LB, réplicas, MinIO, caché)
 ```
