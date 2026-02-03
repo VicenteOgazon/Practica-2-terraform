@@ -61,22 +61,17 @@ def listar_usuarios_json():
     cache_accessible = False
     use_cache = current_app.config.get("USE_CACHE", False)
 
-    # Por defecto: si no hay caché activada, marcamos BYPASS
-    x_cache = "NO_CACHE"
+    x_cache = "NOT_FROM_CACHE"
 
     # Intento de caché
     if use_cache:
         try:
             usuarios = get_cache(cache_key)
             cache_accessible = True
-            # Si puedo hablar con Redis pero no hay key -> será MISS (si acabamos yendo a MySQL)
-            x_cache = "NOT_FROM_CACHE"
         except Exception as e:
             print(f"Error accediendo a Redis: {e}")
             cache_accessible = False
-            x_cache = "NO_CACHE"
 
-    # Si viene de Redis (aunque sea []), es HIT
     if use_cache and cache_accessible and usuarios is not None:
         resp = jsonify({"usuarios": usuarios})
         resp.headers["X-Cache"] = "FROM_CACHE"
@@ -86,12 +81,11 @@ def listar_usuarios_json():
     # Si no viene de Redis, vamos a MySQL
     conn = get_connection()
     if conn is None:
-        # Respuesta de error, pero devolvemos cabecera X-Cache para el test/diagnóstico
         if use_cache:
             if cache_accessible:
-                resp = jsonify({"error": "BBDD caída y caché vacía"})
+                resp = jsonify({"error": "BBDD caida y caché vacia"})
             else:
-                resp = jsonify({"error": "BBDD y caché no disponibles"})
+                resp = jsonify({"error": "BBDD y cache no disponibles"})
         else:
             resp = jsonify({"error": "No se pudo conectar con la base de datos"})
 
@@ -112,17 +106,15 @@ def listar_usuarios_json():
         resp.headers["X-Instance"] = get_container_name()
         return resp, HTTPStatus.SERVICE_UNAVAILABLE
 
-    # Intentar guardar en caché (si está activada y accesible)
+    # Intentar guardar en caché
     if use_cache and cache_accessible:
         try:
             set_cache(cache_key, usuarios)
         except Exception as e:
             print(f"No se pudo guardar en Redis: {e}")
-            # Opcional: para saber que fue MISS pero no se pudo guardar
-            x_cache = "MISS-NOSTORE"
 
     resp = jsonify({"usuarios": usuarios})
-    resp.headers["X-Cache"] = x_cache  # en prod normalmente será MISS aquí
+    resp.headers["X-Cache"] = x_cache
     resp.headers["X-Instance"] = get_container_name()
     return resp, HTTPStatus.OK
 

@@ -17,11 +17,8 @@ server {
         add_header Content-Type text/plain;
     }
 
-    location = /__backends {
-        allow 127.0.0.1;
-        deny all;
-
-        default_type text/plain;
-        return 200 "${backends_text}\n";
+        location = /__backends {
+            default_type text/plain;
+            return 200 "${backends_text}\n";
     }
 }

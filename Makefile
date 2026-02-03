@@ -23,6 +23,9 @@ ps:
 logs:
 	sudo docker logs -f $(c)
 
+crash:
+	sudo docker exec -it $(c) sh -c 'curl -v http://localhost:5000/crash'
+
 # =========================
 # Build app
 # =========================

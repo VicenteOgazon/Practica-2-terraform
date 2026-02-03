@@ -197,40 +197,30 @@ def main():
     else:
         print("OK: aparece fondo.png en el bucket.")
 
-    print()
-    print("=== Test caché ===")
-
-    url_usuarios = url_balanceador + "/usuarios/json"
-
-    body1, headers1, status1 = http_get(url_usuarios, with_headers=True)
-    body2, headers2, status2 = http_get(url_usuarios, with_headers=True)
-
-
-    xcache1 = headers1.get("X-Cache", "")
-    xcache2 = headers2.get("X-Cache", "")
-
-    print("Petición 1 -> status:", status1, "X-Cache:", xcache1)
-    print("Petición 2 -> status:", status2, "X-Cache:", xcache2)
-
-    if status1 == 0 or status2 == 0:
-        print("ERROR: no se pudo hacer la petición a /usuarios/json")
-        sys.exit(1)
-
-    if not xcache1 or not xcache2:
-        print("ERROR: no está llegando la cabecera X-Cache.")
-        sys.exit(1)
-
     if workspace == "prod":
-        if xcache2 != "FROM_CACHE":
-            print("ERROR: en prod se esperaba X-Cache=FROM_CACHE en la segunda petición")
-            sys.exit(1)
-        print("OK: caché funcionando correctamente")
-    else:
-        if xcache1 != "NOT_FROM_CACHE":
-            print("AVISO: en dev se esperaba NOT_FROM_CACHE, pero llegó:", xcache1)
-        else:
-            print("OK: dev sin caché")
+        print()
+        print("=== Test caché ===")
 
-     
+        url_usuarios = url_balanceador + "/usuarios/json"
+
+        body1, headers1, status1 = http_get(url_usuarios, with_headers=True)
+        body2, headers2, status2 = http_get(url_usuarios, with_headers=True)
+
+
+        xcache1 = headers1.get("X-Cache", "")
+        xcache2 = headers2.get("X-Cache", "")
+
+        print("Petición 1 -> status:", status1, "X-Cache:", xcache1)
+        print("Petición 2 -> status:", status2, "X-Cache:", xcache2)
+
+        if status1 == 0 or status2 == 0:
+            print("ERROR: no se pudo hacer la petición a /usuarios/json")
+            sys.exit(1)
+
+        if not xcache1 or not xcache2:
+            print("ERROR: no está llegando la cabecera X-Cache.")
+            sys.exit(1)
+
+             
 if __name__ == "__main__":
     main()

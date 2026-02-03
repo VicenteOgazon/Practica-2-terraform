@@ -1,11 +1,11 @@
 variable "image" {
-  description = "Imagen Docker para la base de datos"
   type        = string
+  description = "Imagen Docker para la base de datos"
 }
 
 variable "container_name" {
-  description = "Nombre del contenedor de base de datos"
   type = string
+  description = "Nombre del contenedor de base de datos"
 }
 
 variable "db_name" {
@@ -26,7 +26,7 @@ variable "db_password" {
 
 variable "db_root_password" {
   type = string
-  description = "Password de root de la base de datos (MySQL, por ejemplo)"
+  description = "Password de root de la base de datos"
   sensitive   = true
 }
 

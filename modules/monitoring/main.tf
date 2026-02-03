@@ -29,7 +29,10 @@ locals {
   grafana_datasources = templatefile("${path.module}/grafana-datasources.yml.tpl", {
     prometheus_host = var.prometheus_container_name
     prometheus_port = var.prometheus_internal_port
+    loki_host       = var.loki_container_name
+    loki_port       = var.loki_internal_port
   })
+
 
   grafana_dashboards_provider = templatefile("${path.module}/grafana-dashboards.yml.tpl", {})
 
@@ -131,7 +134,7 @@ resource "docker_container" "grafana" {
     container_path = "/var/lib/grafana"
   }
 
-    volumes {
+  volumes {
     host_path      = abspath(local_file.grafana_datasources.filename)
     container_path = "/etc/grafana/provisioning/datasources/datasources.yml"
     read_only      = true
@@ -170,7 +173,7 @@ resource "docker_container" "cadvisor" {
     external = var.cadvisor_external_port
   }
 
-  # Montajes necesarios para que vea los contenedores del host
+  # Montajes necesarios para ver los contenedores del host
   volumes {
     host_path      = "/"
     container_path = "/rootfs"

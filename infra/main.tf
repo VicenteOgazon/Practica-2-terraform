@@ -1,3 +1,21 @@
+terraform {
+  required_providers {
+    docker = {
+      source  = "kreuzwerker/docker"
+      version = "3.6.2"
+    }
+
+    null = {
+      source  = "hashicorp/null"
+      version = ">= 3.2.2"
+    }
+  }
+}
+
+provider "docker" {
+  host = "unix:///var/run/docker.sock"
+}
+
 module "network" {
   source       = "../modules/network"
   network_name = var.network_name
@@ -19,14 +37,13 @@ module "mysql" {
 
 module "cache" {
   source = "../modules/cache"
-  count  = var.enable_cache ? 1 : 0
+  count  = var.enable_cache ? 1 : 0 # count decide si se crea el modulo o no
 
-  image           = var.cache_image
-  container_name  = var.cache_container_name
-  internal_port   = var.cache_internal_port
-  external_port   = var.cache_external_port
-  network_name    = module.network.network_name
+  image          = var.cache_image
+  container_name = var.cache_container_name
+  network_name   = module.network.network_name
 }
+
 
 locals {
   effective_cache_name = var.enable_cache ? var.cache_container_name : ""
@@ -117,6 +134,8 @@ module "storage" {
   minio_api_external_port     = var.minio_api_external_port
   minio_console_internal_port = var.minio_console_internal_port
   minio_console_external_port = var.minio_console_external_port
+  network_name                = module.network.network_name
 
-  network_name = module.network.network_name
+  environment                 = var.environment
+  minio_background_image_path = var.minio_background_image_path
 }

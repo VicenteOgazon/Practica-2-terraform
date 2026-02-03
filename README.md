@@ -179,7 +179,7 @@ make test-e2e ENV=prod
 
 ### Coste mensual simulado en AWS
 
-Al ejecutar terraform apply, Terraform muestra en los outputs un resumen de coste mensual aproximado, simulando el despliegue en AWS EC2 On-Demand en la región eu-south-2.
+Al ejecutar terraform **make apply-dev/prod**, Terraform muestra en los outputs un resumen de coste mensual aproximado, simulando el despliegue en AWS EC2 On-Demand en la región eu-south-2.
 
 El cálculo se basa en:
 
@@ -197,7 +197,7 @@ El cálculo se basa en:
 
 Aproximación de 730 horas/mes.
 
-El output mostrado es cost_monthly_summary.
+El output mostrado es **cost_monthly_summary**.
 
 
 ---
@@ -250,76 +250,10 @@ El output mostrado es cost_monthly_summary.
 ---
 
 ## Diagrama
+```mermaid
 flowchart TB
-  TF[Terraform\n(provider: kreuzwerker/docker)] --> DH[Docker Host]
-
-  DH --> DEVNET
-  DH --> PRODNET
-
-  subgraph DEVNET[Entorno DEV (red Docker: dev_network)]
-    DEVLB[Nginx LB\n:6060] --> DEVWEB0[Flask web\n(dev_web-0)]
-    DEVLB --> DEVWEB1[Flask web\n(dev_web-1)]
-
-    DEVWEB0 --> DEVDB[MySQL\n(dev_db)]
-    DEVWEB1 --> DEVDB
-
-    DEVWEB0 --> DEVMINIO[MinIO\n:9000 / :9001\n(bucket: static-dev)]
-    DEVWEB1 --> DEVMINIO
-
-    subgraph DEVMON[Monitoring DEV]
-      DEVCAD[cAdvisor\n:8080]
-      DEVPROM[Prometheus\n:9090]
-      DEVLOKI[Loki\n:3100]
-      DEVPROMTAIL[Promtail]
-      DEVGRAF[Grafana\n:3000]
-    end
-
-    DEVPROM --> DEVWEB0
-    DEVPROM --> DEVWEB1
-    DEVPROM --> DEVCAD
-
-    DEVPROMTAIL --> DEVLOKI
-    DEVGRAF --> DEVPROM
-    DEVGRAF --> DEVLOKI
-  end
-
-  subgraph PRODNET[Entorno PROD (red Docker: prod_network)]
-    PRODLB[Nginx LB\n:6061] --> PRODWEB0[Flask web\n(prod_web-0)]
-    PRODLB --> PRODWEB1[Flask web\n(prod_web-1)]
-    PRODLB --> PRODWEB2[Flask web\n(prod_web-2)]
-
-    PRODWEB0 --> PRODDB[MySQL\n(prod_db)]
-    PRODWEB1 --> PRODDB
-    PRODWEB2 --> PRODDB
-
-    PRODWEB0 --> PRODREDIS[Redis cache\n(redis_cache)]
-    PRODWEB1 --> PRODREDIS
-    PRODWEB2 --> PRODREDIS
-
-    PRODWEB0 --> PRODMINIO[MinIO\n:19000 / :19001\n(bucket: static-prod)]
-    PRODWEB1 --> PRODMINIO
-    PRODWEB2 --> PRODMINIO
-
-    subgraph PRODMON[Monitoring + Logs PROD]
-      PRODCAD[cAdvisor\n:8081]
-      PRODPROM[Prometheus\n:9091]
-      PRODLOKI[Loki\n:3101]
-      PRODPROMTAIL[Promtail]
-      PRODGRAF[Grafana\n:3001]
-      ALERT[Alertmanager\n:9094]
-    end
-
-    PRODPROM --> PRODWEB0
-    PRODPROM --> PRODWEB1
-    PRODPROM --> PRODWEB2
-    PRODPROM --> PRODCAD
-
-    PRODPROM --> ALERT
-
-    PRODPROMTAIL --> PRODLOKI
-    PRODGRAF --> PRODPROM
-    PRODGRAF --> PRODLOKI
-  end
+  A[Funciona] --> B[Mermaid en GitHub]
+```
 
 ---
 ## Pruebas realizadas
@@ -342,7 +276,7 @@ Todas las pruebas han sido satisfactorias.
 | 9  | En Prometheus dev, los targets `dev_web-*` y `dev_cadvisor:8080` aparecen en estado `UP`                 | OK  ✅    |
 | 10 | En Grafana dev, el dashboard de CPU y memoria muestra métricas de los contenedores (incluidos dev_web-*) | OK  ✅    |
 | 11 | Los logs de los contenedores dev se visualizan desde Grafana (Explore → Loki)                            | OK  ✅    |
-| 12 | Ejecución de make `test-e2e env=dev` (LB + réplicas + MinIO + cabecera X-Cache)                          | OK ✅     |
+| 12 | Ejecución de make `test-e2e env=dev` (LB + réplicas + MinIO + cabecera X-Cache)                          | OK  ✅     |
 
 
 **Conclusión:**

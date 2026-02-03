@@ -6,7 +6,7 @@ variable "environment" {
   type = string
 }
 
-# Web
+# ----- Web -----
 variable "app_image" {
   type = string
 }
@@ -23,7 +23,7 @@ variable "web_replicas" {
   type = number
 }
 
-# DB
+# ----- DB -----
 variable "db_image" {
   type = string
 }
@@ -58,7 +58,7 @@ variable "db_password" {
   sensitive = true
 }
 
-# Cache (opcional)
+# ----- Cache -----
 variable "enable_cache" {
   type    = bool
   default = false
@@ -84,7 +84,7 @@ variable "cache_external_port" {
   default = null
 }
 
-# Load Balancer
+# ----- Load Balancer -----
 variable "lb_image" {
   type = string
 }
@@ -97,7 +97,7 @@ variable "lb_listen_port" {
   type = number
 }
 
-# Prometheus
+# ----- Prometheus -----
 variable "prometheus_container_name" {
   type = string
 }
@@ -140,7 +140,7 @@ variable "grafana_admin_password" {
   sensitive = true
 }
 
-# cAdvisor
+# ----- cAdvisor -----
 variable "cadvisor_container_name" {
   type = string
 }
@@ -157,7 +157,7 @@ variable "cadvisor_external_port" {
   type = number
 }
 
-# Loki
+# ----- Loki -----
 variable "loki_container_name" {
   type = string
 }
@@ -175,7 +175,7 @@ variable "loki_external_port" {
   type = number
 }
 
-# Promtail
+# ----- Promtail -----
 variable "promtail_container_name" {
   type = string
 }
@@ -184,7 +184,7 @@ variable "promtail_image" {
   type = string
 }
 
-# Alerting (solo prod)
+# ----- Alert manager -----
 variable "alerting_enabled" {
   type    = bool
   default = false
@@ -210,7 +210,7 @@ variable "alertmanager_external_port" {
   default = null
 }
 
-# MinIO
+# ----- MinIO -----
 variable "minio_image" {
   type = string
 }

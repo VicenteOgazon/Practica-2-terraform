@@ -8,3 +8,9 @@ datasources:
     url: http://${prometheus_host}:${prometheus_port}
     isDefault: true
     editable: false
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://${loki_host}:${loki_port}
+    isDefault: false

@@ -31,7 +31,7 @@ locals {
 #Empleamos el resource local para crear en mi máquina un fichero con nginx_conf
 resource "local_file" "nginx_conf" {
   content  = local.nginx_conf
-  filename = "/home/vicente/Escritorio/Grado Ingenieria/4 año/1 Semestre/Redes avanzadas/Practica2/modules/lb/${var.container_name}_replicas.conf"
+  filename = abspath("${path.module}/${var.container_name}_replicas.conf")
 }
 
 resource "docker_container" "lb" {

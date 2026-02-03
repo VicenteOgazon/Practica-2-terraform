@@ -11,18 +11,10 @@ resource "docker_image" "cache" {
   name = var.image
 }
 
-resource "docker_container" "cache_container" {
+resource "docker_container" "cache" {
   image   = docker_image.cache.image_id
   name    = var.container_name
   restart = "always"
-
-  dynamic "ports" {
-    for_each = var.external_port == null ? [] : [1]
-    content {
-      internal = var.internal_port
-      external = var.external_port
-    }
-  }
 
   healthcheck {
     test         = ["CMD", "redis-cli", "ping"]

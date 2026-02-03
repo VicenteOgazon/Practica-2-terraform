@@ -35,3 +35,14 @@ variable "minio_console_external_port" {
 variable "network_name" {
   type = string
 }
+
+variable "environment" {
+  type        = string
+  description = "Entorno: development/production"
+}
+
+variable "minio_background_image_path" {
+  type        = string
+  description = "Ruta local al fichero fondo.png para subirlo al bucket"
+}
+

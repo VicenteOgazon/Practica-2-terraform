@@ -9,25 +9,3 @@ groups:
         annotations:
           summary: "Réplica web insuficiente en PRODUCCIÓN"
           description: "Hay menos de 3 instancias web UP en producción."
-
-  - name: db.rules
-    rules:
-      - alert: DBContainerDownProd
-        expr: time() - container_last_seen{job="cadvisor", name=~"/?prod_db"} > 30
-        for: 0s
-        labels:
-          severity: critical
-        annotations:
-          summary: "Contenedor DB de PRODUCCIÓN caído"
-          description: "No se han recibido métricas del contenedor prod_db en los últimos 30s."
-
-  - name: lb.rules
-    rules:
-      - alert: LBContainerDownProd
-        expr: time() - container_last_seen{job="cadvisor", name=~"/?prod_lb"} > 30
-        for: 0s
-        labels:
-          severity: critical
-        annotations:
-          summary: "Contenedor LB de PRODUCCIÓN caído"
-          description: "No se han recibido métricas del contenedor prod_lb en los últimos 30s."
