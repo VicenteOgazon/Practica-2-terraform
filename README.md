@@ -164,7 +164,7 @@ Durante su ejecución realiza:
 
 - Hace una petición al enpoint /usuarios/json y verifica el funcionamiento de la caché mediante la cabecera X-Cache:
 
-    - En dev se espera NO_CACHE
+    - En dev no se ejecuta esta parte del test.
 
     - En prod se espera NOT_FROM_CACHE en la primera petición y FROM_CACHE en la segunda
 
@@ -227,7 +227,6 @@ El output mostrado es **cost_monthly_summary**.
 │   ├── variables.tf                # variables comunes para dev y prod
 │   ├── outputs.tf                  # outputs (lb_url, web_replicas, minio_bucket, minio_api_port, etc.)
 │   ├── cost.tf                     # cálculo de coste mensual simulado EC2 On-Demand eu-south-2 (output cost_monthly_summary)
-│   ├── minio_bootstrap.tf          # creación bucket + subida fondo.png (con mc / null_resource o provider minio, según tu versión final)
 │   └── environments/
 │       ├── dev.tfvars              # valores concretos dev (web_replicas=2, cache desactivada, puertos dev, bucket static-dev, etc.)
 │       └── prod.tfvars             # valores concretos prod (web_replicas=3, cache activada, puertos prod, bucket static-prod, etc.)
@@ -250,10 +249,8 @@ El output mostrado es **cost_monthly_summary**.
 ---
 
 ## Diagrama
-```mermaid
-flowchart TB
-  A[Funciona] --> B[Mermaid en GitHub]
-```
+
+![Diagrama de arquitectura](arquitectura.png)
 
 ---
 ## Pruebas realizadas
